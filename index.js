@@ -1,8 +1,9 @@
 // importamos la libreria
 import express from "express"; // es6
 import "dotenv/config";
-import aprendiz from "../api/src/modules/aprendices/aprendiz.routes.js";
-import usuario from "../api/src/modules/auth/auth.routes.js";
+import aprendiz from "./src/modules/aprendices/aprendiz.routes.js";
+import usuario from "./src/modules/auth/auth.routes.js";
+import ficha from "./src/modules/fichas/ficha.routes.js";
 import morgan from "morgan";
 
 import cors from "cors";
@@ -26,6 +27,7 @@ app.use(morgan("tiny"));
 app.use(cors());
 
 app.use("/aprendiz", aprendiz);
+app.use("/ficha", ficha);
 app.use("/usuario", usuario);
 
 app.listen(process.env.PORT, () => {
