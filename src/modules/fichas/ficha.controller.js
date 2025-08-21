@@ -7,6 +7,7 @@ import {
   deleteFichaDB,
 } from "./ficha.model.js";
 
+// Obtener todas las fichas
 export async function getAllFichas(req, res) {
   try {
     const fichas = await getFichasDB();
@@ -17,21 +18,24 @@ export async function getAllFichas(req, res) {
   } catch (error) {
     res.status(500).send({
       status: "error",
-      message: error.code + "=>" + error.message,
+      message: error.code + " => " + error.message,
     });
   }
 }
 
+// Obtener ficha por ID
 export async function getFichaById(req, res) {
   try {
     const { id } = req.params;
     const ficha = await getFichaporIdDB(id);
-    if (!ficha) {
+
+    if (!ficha || ficha.length === 0) {
       return res.status(404).send({
         status: "error",
         message: "Ficha no encontrada.",
       });
     }
+
     res.status(200).send({
       status: "ok",
       data: ficha,
@@ -39,14 +43,16 @@ export async function getFichaById(req, res) {
   } catch (error) {
     res.status(500).send({
       status: "error",
-      message: error.code + "=>" + error.message,
+      message: error.code + " => " + error.message,
     });
   }
 }
 
+// Crear ficha
 export async function createFicha(req, res) {
   try {
-    let data = req.body;
+    const data = req.body;
+
     // Validaciones básicas
     if (!data.nombre || !data.fecha_inicio || !data.fecha_fin || !data.jornada) {
       return res.status(400).send({
@@ -63,23 +69,26 @@ export async function createFicha(req, res) {
   } catch (error) {
     res.status(500).send({
       status: "error",
-      message: error.code + "=>" + error.message,
+      message: error.code + " => " + error.message,
     });
   }
 }
 
+// Actualizar ficha
 export async function updateFicha(req, res) {
   try {
     const { id } = req.params;
     const data = req.body;
-    
+
     const result = await updateFichaDB(id, data);
+
     if (result.affectedRows === 0) {
       return res.status(404).send({
         status: "error",
-        message: "Ficha no encontrada o no hubo cambios para actualizar.",
+        message: "Ficha no encontrada o sin cambios para actualizar.",
       });
     }
+
     res.status(200).send({
       status: "ok",
       data: result,
@@ -87,21 +96,25 @@ export async function updateFicha(req, res) {
   } catch (error) {
     res.status(500).send({
       status: "error",
-      message: error.code + "=>" + error.message,
+      message: error.code + " => " + error.message,
     });
   }
 }
 
+// Eliminar ficha
 export async function deleteFicha(req, res) {
   try {
     const { id } = req.params;
+
     const result = await deleteFichaDB(id);
+
     if (result.affectedRows === 0) {
       return res.status(404).send({
         status: "error",
         message: "Ficha no encontrada para eliminar.",
       });
     }
+
     res.status(200).send({
       status: "ok",
       data: result,
@@ -109,7 +122,7 @@ export async function deleteFicha(req, res) {
   } catch (error) {
     res.status(500).send({
       status: "error",
-      message: error.code + "=>" + error.message,
+      message: error.code + " => " + error.message,
     });
   }
 }

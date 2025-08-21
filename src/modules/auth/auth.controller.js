@@ -5,8 +5,12 @@ import {
   updateUserDB,
   deleteUserDB,
   authUserDB,
+  updateImgBD,
 } from "./auth.model.js";
 
+import { generarToken } from "../helpers/administrarToken.js"; 
+
+// Obtener todos los usuarios
 export async function getAllUsers(req, res) {
   try {
     const users = await getUsersDB();
@@ -17,21 +21,24 @@ export async function getAllUsers(req, res) {
   } catch (error) {
     res.status(500).send({
       status: "error",
-      message: error.code + "=>" + error.message,
+      message: error.code + " => " + error.message,
     });
   }
 }
 
-export async function getUserById(id) {
+// Obtener usuario por ID
+export async function getUserById(req, res) {
   try {
-    const user = await getUserById(id);
-    if (!aprendiz) {
-      throw {
+    const { id } = req.params;
+    const user = await getUserporIdDB(id);
+
+    if (!user || user.length === 0) {
+      return res.status(404).send({
         status: "error",
-        message: "usuario no encontrado.",
-        statusCode: 404,
-      };
+        message: "Usuario no encontrado.",
+      });
     }
+
     res.status(200).send({
       status: "ok",
       data: user,
@@ -39,18 +46,19 @@ export async function getUserById(id) {
   } catch (error) {
     res.status(500).send({
       status: "error",
-      message: error.code + "=>" + error.message,
+      message: error.code + " => " + error.message,
     });
   }
 }
 
+// Crear usuario
 export async function createUser(req, res) {
   try {
-    let data = req.body;
-    // Aquí debes añadir validaciones de entrada de datos --- passport-u otra libreria  !!!!!
+    const data = req.body;
+    // TODO: añadir validaciones de entrada con librería como Joi, Yup o express-validator
 
     const result = await createUserDB(data);
-    res.status(200).send({
+    res.status(201).send({
       status: "ok",
       data: result,
     });
@@ -62,16 +70,21 @@ export async function createUser(req, res) {
   }
 }
 
-export async function updateUser(id, data) {
+// Actualizar usuario
+export async function updateUser(req, res) {
   try {
+    const { id } = req.params;
+    const data = req.body;
+
     const result = await updateUserDB(id, data);
+
     if (result.affectedRows === 0) {
-      throw {
+      return res.status(404).send({
         status: "error",
-        message: "usuario no encontrado o no hubo cambios para actualizar.",
-        statusCode: 404,
-      };
+        message: "Usuario no encontrado o sin cambios para actualizar.",
+      });
     }
+
     res.status(200).send({
       status: "ok",
       data: result,
@@ -84,16 +97,20 @@ export async function updateUser(id, data) {
   }
 }
 
-export async function deleteUser(id) {
+// Eliminar usuario
+export async function deleteUser(req, res) {
   try {
+    const { id } = req.params;
+
     const result = await deleteUserDB(id);
+
     if (result.affectedRows === 0) {
-      throw {
+      return res.status(404).send({
         status: "error",
-        message: "usuario no encontrado para eliminar.",
-        statusCode: 404,
-      };
+        message: "Usuario no encontrado para eliminar.",
+      });
     }
+
     res.status(200).send({
       status: "ok",
       data: result,
@@ -106,16 +123,28 @@ export async function deleteUser(id) {
   }
 }
 
+// Autenticación de usuario
 export async function authUser(req, res) {
   try {
-    let data = req.body;
-    // Aquí debes añadir validaciones de entrada de datos --- passport-u otra libreria  !!!!!
+    const data = req.body;
+    // TODO: añadir validaciones de entrada
 
-    const result = await authUserDB(data);
-    console.log(result);
+    const user = await authUserDB(data);
+
+    if (!user || user.length === 0) {
+      return res.status(401).send({
+        status: "error",
+        message: "Credenciales inválidas.",
+      });
+    }
+
+    const token = generarToken(user[0], process.env.TOKEN_LIFE);
+    console.log("Token generado:", token);
+
     res.status(200).send({
       status: "ok",
-      data: result,
+      data: user,
+      token: token,
     });
   } catch (error) {
     res.status(500).send({
@@ -123,4 +152,38 @@ export async function authUser(req, res) {
       message: error.message,
     });
   }
+}
+
+export async function subirImagen(req, res) {
+  if (!req.file && !req.files) {
+    return res.status(400).send({
+      status: "error",
+      message: "No se ha subido ningún archivo.",
+    });
+  }
+
+  let archivo = req.file.originalname;
+  let archivoSeparado = archivo.split(".");
+  let extension = archivoSeparado[1];
+
+  if (extension !== "jpg" && extension !== "png" && extension !== "jpeg") {
+    return res.status(400).send({
+      status: "error",
+      message: "Formato de imagen no permitido. Use jpg, png o jpeg.",
+    });
+  }else{
+    let id = req.params.id;
+
+    let ruta = req.file.filename;
+
+    let result = await updateImgBD(ruta, id);
+    
+    return res.status(200).send({
+      status: "ok",
+      message: "Imagen subida correctamente",
+      data: result,
+    });
+  }
+
+
 }
